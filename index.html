@@ -8,31 +8,29 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- เปลี่ยนฟอนต์เป็น Poppins เพื่อความสวยงามทันสมัย -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;700&family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            /* ใช้ฟอนต์ Sarabun สำหรับส่วนควบคุม */
             font-family: 'Sarabun', sans-serif;
             transition: background-color 0.2s ease-in-out;
             overflow: hidden;
         }
         #time-display {
-            /* ใช้ฟอนต์ Poppins ที่ดูหรูหราสำหรับตัวเลขเวลา */
             font-family: 'Poppins', sans-serif;
+            font-size: clamp(2.5rem, 18vh, 25vw);
         }
         /* คลาสสำหรับการกระพริบ */
         @keyframes flash-bw {
-            0%, 100% { background-color: #111827; color: #f9fafb; } /* bg-gray-900, text-gray-50 */
+            0%, 100% { background-color: #111827; color: #f9fafb; }
             50% { background-color: #f9fafb; color: #111827; }
         }
         @keyframes flash-bo {
-            0%, 100% { background-color: #111827; color: #fb923c; } /* bg-gray-900, orange-400 */
+            0%, 100% { background-color: #111827; color: #fb923c; }
             50% { background-color: #fb923c; color: #111827; }
         }
         @keyframes flash-ry {
-            0%, 100% { background-color: #ef4444; color: #f9fafb; } /* Red */
-            50% { background-color: #facc15; color: #111827; } /* Yellow */
+            0%, 100% { background-color: #ef4444; color: #f9fafb; }
+            50% { background-color: #facc15; color: #111827; }
         }
 
         /* ปรับความถี่การกระพริบ */
@@ -51,33 +49,35 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 flex items-center justify-center h-screen">
+<body class="bg-gray-900 flex items-center justify-center h-screen p-2 sm:p-4">
 
-    <div id="app-container" class="text-center p-4 flex flex-col justify-center h-full w-full">
+    <!-- Container หลักที่กำหนดอัตราส่วน 16:9 -->
+    <div id="app-container" class="w-full h-auto max-h-full bg-gray-900 overflow-hidden text-center p-4 flex flex-col" style="aspect-ratio: 16 / 9;">
         
         <!-- ส่วนแสดงเวลา -->
         <div class="flex-grow flex items-center justify-center">
-            <!-- เปลี่ยนเป็น font-bold เพื่อให้ตัวเลขหนาขึ้น -->
-            <h1 id="time-display" class="font-bold text-gray-100 tracking-tighter leading-none text-[22vw] sm:text-[24vw] md:text-[28vw]" style="font-variant-numeric: tabular-nums;">05:00</h1>
+            <h1 id="time-display" class="font-bold text-gray-100 tracking-tighter leading-none" style="font-variant-numeric: tabular-nums;">05:00</h1>
         </div>
 
-        <!-- ส่วนควบคุมเวลาเริ่มต้น -->
-        <div class="flex items-center justify-center space-x-2 sm:space-x-4 mb-4">
-            <button id="decrease-btn" class="bg-gray-700 text-gray-200 hover:bg-gray-600 font-bold w-12 h-12 rounded-full text-3xl shadow-md transition-transform transform hover:scale-110 disabled:opacity-50 disabled:scale-100 flex-shrink-0">-</button>
-            <span id="set-time-label" class="text-lg sm:text-xl text-gray-300 font-semibold whitespace-nowrap">ตั้งเวลา (นาที)</span>
-            <button id="increase-btn" class="bg-gray-700 text-gray-200 hover:bg-gray-600 font-bold w-12 h-12 rounded-full text-3xl shadow-md transition-transform transform hover:scale-110 disabled:opacity-50 disabled:scale-100 flex-shrink-0">+</button>
-        </div>
+        <!-- ส่วนควบคุมทั้งหมด -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
+            <!-- ส่วนควบคุมเวลาเริ่มต้น -->
+            <div class="flex items-center justify-center space-x-2 sm:space-x-4">
+                <button id="decrease-btn" class="bg-gray-700 text-gray-200 hover:bg-gray-600 font-bold w-12 h-12 rounded-full text-3xl shadow-md transition-transform transform hover:scale-110 disabled:opacity-50 disabled:scale-100 flex-shrink-0">-</button>
+                <span id="set-time-label" class="text-lg sm:text-xl text-gray-300 font-semibold whitespace-nowrap">ตั้งเวลา (นาที)</span>
+                <button id="increase-btn" class="bg-gray-700 text-gray-200 hover:bg-gray-600 font-bold w-12 h-12 rounded-full text-3xl shadow-md transition-transform transform hover:scale-110 disabled:opacity-50 disabled:scale-100 flex-shrink-0">+</button>
+            </div>
 
-        <!-- ส่วนปุ่มควบคุมหลัก -->
-        <div class="flex justify-center space-x-4 mb-4">
-            <button id="start-pause-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-lg transition-transform transform hover:scale-105 disabled:opacity-50 disabled:scale-100">
-                เริ่ม
-            </button>
-            <button id="reset-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-lg transition-transform transform hover:scale-105">
-                รีเซ็ต
-            </button>
+            <!-- ส่วนปุ่มควบคุมหลัก -->
+            <div class="flex justify-center space-x-4">
+                <button id="start-pause-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-lg transition-transform transform hover:scale-105 disabled:opacity-50 disabled:scale-100">
+                    เริ่ม
+                </button>
+                <button id="reset-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-lg transition-transform transform hover:scale-105">
+                    รีเซ็ต
+                </button>
+            </div>
         </div>
-
     </div>
 
     <script>
@@ -87,7 +87,7 @@
         const resetBtn = document.getElementById('reset-btn');
         const increaseBtn = document.getElementById('increase-btn');
         const decreaseBtn = document.getElementById('decrease-btn');
-        const appBody = document.querySelector('body');
+        const appContainer = document.getElementById('app-container');
 
         let initialTime = 5 * 60; // 5 นาที
         let timeRemaining = initialTime;
@@ -95,21 +95,14 @@
         let isRunning = false;
         let isAlarming = false;
 
-        // สร้างเสียงกระดิ่งซานต้าคลอสด้วย MetalSynth
-        const santaBell = new Tone.MetalSynth({
-            frequency: 900,
-            envelope: { attack: 0.001, decay: 0.4, release: 0.2 },
-            harmonicity: 4.1,
-            modulationIndex: 20,
-            resonance: 7000,
-            octaves: 1.2
+        // สร้างเสียงกริ่งยาวๆ ด้วย FMSynth
+        const alarmSound = new Tone.FMSynth({
+            harmonicity: 3.01,
+            modulationIndex: 14,
+            envelope: { attack: 0.01, decay: 0.2, sustain: 1, release: 0.5 },
+            modulationEnvelope: { attack: 0.5, decay: 0, sustain: 1, release: 0.5 }
         }).toDestination();
-        santaBell.volume.value = -5; // ปรับความดัง
-
-        const alarmLoop = new Tone.Loop(time => {
-            santaBell.triggerAttackRelease("E6", "16n", time);
-            santaBell.triggerAttackRelease("G6", "16n", time + 0.15);
-        }, "1s").start(0);
+        alarmSound.volume.value = -10;
 
         // --- ฟังก์ชันหลัก ---
         function updateDisplay() {
@@ -126,7 +119,7 @@
                 startPauseBtn.classList.replace('hover:bg-yellow-600', 'hover:bg-green-700');
                 isRunning = false;
             } else {
-                if (Tone.context.state !== 'running') {
+                if (typeof Tone !== 'undefined' && Tone.context.state !== 'running') {
                     Tone.start();
                 }
                 intervalId = setInterval(tick, 1000);
@@ -150,11 +143,11 @@
         function checkFlashConditions() {
             stopFlashing();
             if (timeRemaining <= 10 && timeRemaining > 0) {
-                appBody.classList.add('flashing-ry-2s');
+                appContainer.classList.add('flashing-ry-2s');
             } else if (timeRemaining <= 30 && timeRemaining > 10) {
-                appBody.classList.add('flashing-bo-4s');
+                appContainer.classList.add('flashing-bo-4s');
             } else if (timeRemaining <= 60 && timeRemaining > 30) {
-                appBody.classList.add('flashing-bw-4s');
+                appContainer.classList.add('flashing-bw-4s');
             }
         }
 
@@ -165,8 +158,10 @@
             timeRemaining = 0;
             updateDisplay();
             
-            Tone.Transport.start();
             startFlashing('flashing-ry-2s');
+            
+            // เริ่มเสียงกริ่งยาวๆ
+            alarmSound.triggerAttack("A4");
 
             resetBtn.textContent = 'หยุด';
             startPauseBtn.disabled = true;
@@ -176,7 +171,8 @@
 
         function resetTimer() {
             if (isAlarming) {
-                Tone.Transport.stop();
+                // หยุดเสียงกริ่ง
+                alarmSound.triggerRelease();
                 isAlarming = false;
             }
 
@@ -198,7 +194,6 @@
         }
 
         function handleKeyPress(event) {
-            // กด Enter เพื่อ เริ่ม/หยุด หรือ หยุดเสียงเตือน
             if (event.key === 'Enter') {
                 event.preventDefault();
                 if (isAlarming) {
@@ -208,7 +203,6 @@
                 }
             }
 
-            // กด Shift เพื่อ รีเซ็ต หรือ หยุดเสียงเตือน
             if (event.key === 'Shift') {
                 event.preventDefault();
                 resetTimer();
@@ -217,11 +211,11 @@
 
         function startFlashing(className) {
             stopFlashing();
-            appBody.classList.add(className);
+            appContainer.classList.add(className);
         }
 
         function stopFlashing() {
-            appBody.classList.remove('flashing-bw-4s', 'flashing-bo-4s', 'flashing-ry-2s');
+            appContainer.classList.remove('flashing-bw-4s', 'flashing-bo-4s', 'flashing-ry-2s');
         }
 
         function increaseTime() {
@@ -245,7 +239,7 @@
         resetBtn.addEventListener('click', resetTimer);
         increaseBtn.addEventListener('click', increaseTime);
         decreaseBtn.addEventListener('click', decreaseTime);
-        window.addEventListener('keydown', handleKeyPress); // เพิ่ม event listener สำหรับคีย์บอร์ด
+        window.addEventListener('keydown', handleKeyPress);
 
         // --- Initial Display ---
         updateDisplay();
