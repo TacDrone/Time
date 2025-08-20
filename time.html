@@ -172,13 +172,11 @@
             startPauseBtn.disabled = true;
             increaseBtn.disabled = true;
             decreaseBtn.disabled = true;
-            window.addEventListener('keydown', handleStopKey);
         }
 
         function resetTimer() {
             if (isAlarming) {
                 Tone.Transport.stop();
-                window.removeEventListener('keydown', handleStopKey);
                 isAlarming = false;
             }
 
@@ -199,8 +197,20 @@
             decreaseBtn.disabled = false;
         }
 
-        function handleStopKey(event) {
+        function handleKeyPress(event) {
+            // กด Enter เพื่อ เริ่ม/หยุด หรือ หยุดเสียงเตือน
             if (event.key === 'Enter') {
+                event.preventDefault();
+                if (isAlarming) {
+                    resetTimer();
+                } else if (!startPauseBtn.disabled) {
+                    toggleTimer();
+                }
+            }
+
+            // กด Shift เพื่อ รีเซ็ต หรือ หยุดเสียงเตือน
+            if (event.key === 'Shift') {
+                event.preventDefault();
                 resetTimer();
             }
         }
@@ -235,10 +245,10 @@
         resetBtn.addEventListener('click', resetTimer);
         increaseBtn.addEventListener('click', increaseTime);
         decreaseBtn.addEventListener('click', decreaseTime);
+        window.addEventListener('keydown', handleKeyPress); // เพิ่ม event listener สำหรับคีย์บอร์ด
 
         // --- Initial Display ---
         updateDisplay();
     </script>
 </body>
 </html>
-
