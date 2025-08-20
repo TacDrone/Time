@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จับเวลาถอยหลัง</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- เปลี่ยนฟอนต์เป็น Poppins เพื่อความสวยงามทันสมัย -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;700&family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            /* ใช้ฟอนต์ Sarabun สำหรับส่วนควบคุม */
+            font-family: 'Sarabun', sans-serif;
+            transition: background-color 0.2s ease-in-out;
+            overflow: hidden;
+        }
+        #time-display {
+            /* ใช้ฟอนต์ Poppins ที่ดูหรูหราสำหรับตัวเลขเวลา */
+            font-family: 'Poppins', sans-serif;
+        }
+        /* คลาสสำหรับการกระพริบ */
+        @keyframes flash-bw {
+            0%, 100% { background-color: #111827; color: #f9fafb; } /* bg-gray-900, text-gray-50 */
+            50% { background-color: #f9fafb; color: #111827; }
+        }
+        @keyframes flash-bo {
+            0%, 100% { background-color: #111827; color: #fb923c; } /* bg-gray-900, orange-400 */
+            50% { background-color: #fb923c; color: #111827; }
+        }
+        @keyframes flash-ry {
+            0%, 100% { background-color: #ef4444; color: #f9fafb; } /* Red */
+            50% { background-color: #facc15; color: #111827; } /* Yellow */
+        }
+
+        /* ปรับความถี่การกระพริบ */
+        .flashing-bw-4s { animation: flash-bw 4s infinite; }
+        .flashing-bo-4s { animation: flash-bo 4s infinite; }
+        .flashing-ry-2s { animation: flash-ry 2s infinite; }
+        
+        /* ปรับสีของส่วนประกอบต่างๆ เมื่อพื้นหลังเปลี่ยน */
+        .flashing-bw-4s button, .flashing-bo-4s button, .flashing-ry-2s button,
+        .flashing-bw-4s span, .flashing-bo-4s span, .flashing-ry-2s span {
+            border-color: currentColor;
+            color: currentColor !important;
+        }
+        .flashing-bw-4s #time-display, .flashing-bo-4s #time-display, .flashing-ry-2s #time-display {
+             color: currentColor;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 flex items-center justify-center h-screen">
+
+    <div id="app-container" class="text-center p-4 flex flex-col justify-center h-full w-full">
+        
+        <!-- ส่วนแสดงเวลา -->
+        <div class="flex-grow flex items-center justify-center">
+            <!-- เปลี่ยนเป็น font-bold เพื่อให้ตัวเลขหนาขึ้น -->
+            <h1 id="time-display" class="font-bold text-gray-100 tracking-tighter leading-none text-[22vw] sm:text-[24vw] md:text-[28vw]" style="font-variant-numeric: tabular-nums;">05:00</h1>
+        </div>
+
+        <!-- ส่วนควบคุมเวลาเริ่มต้น -->
+        <div class="flex items-center justify-center space-x-2 sm:space-x-4 mb-4">
+            <button id="decrease-btn" class="bg-gray-700 text-gray-200 hover:bg-gray-600 font-bold w-12 h-12 rounded-full text-3xl shadow-md transition-transform transform hover:scale-110 disabled:opacity-50 disabled:scale-100 flex-shrink-0">-</button>
+            <span id="set-time-label" class="text-lg sm:text-xl text-gray-300 font-semibold whitespace-nowrap">ตั้งเวลา (นาที)</span>
+            <button id="increase-btn" class="bg-gray-700 text-gray-200 hover:bg-gray-600 font-bold w-12 h-12 rounded-full text-3xl shadow-md transition-transform transform hover:scale-110 disabled:opacity-50 disabled:scale-100 flex-shrink-0">+</button>
+        </div>
+
+        <!-- ส่วนปุ่มควบคุมหลัก -->
+        <div class="flex justify-center space-x-4 mb-4">
+            <button id="start-pause-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-lg transition-transform transform hover:scale-105 disabled:opacity-50 disabled:scale-100">
+                เริ่ม
+            </button>
+            <button id="reset-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-lg transition-transform transform hover:scale-105">
+                รีเซ็ต
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- การตั้งค่าเริ่มต้น ---
+        const timeDisplay = document.getElementById('time-display');
+        const startPauseBtn = document.getElementById('start-pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const increaseBtn = document.getElementById('increase-btn');
+        const decreaseBtn = document.getElementById('decrease-btn');
+        const appBody = document.querySelector('body');
+
+        let initialTime = 5 * 60; // 5 นาที
+        let timeRemaining = initialTime;
+        let intervalId = null;
+        let isRunning = false;
+        let isAlarming = false;
+
+        // สร้างเสียงกระดิ่งซานต้าคลอสด้วย MetalSynth
+        const santaBell = new Tone.MetalSynth({
+            frequency: 900,
+            envelope: { attack: 0.001, decay: 0.4, release: 0.2 },
+            harmonicity: 4.1,
+            modulationIndex: 20,
+            resonance: 7000,
+            octaves: 1.2
+        }).toDestination();
+        santaBell.volume.value = -5; // ปรับความดัง
+
+        const alarmLoop = new Tone.Loop(time => {
+            santaBell.triggerAttackRelease("E6", "16n", time);
+            santaBell.triggerAttackRelease("G6", "16n", time + 0.15);
+        }, "1s").start(0);
+
+        // --- ฟังก์ชันหลัก ---
+        function updateDisplay() {
+            const minutes = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+            const seconds = (timeRemaining % 60).toString().padStart(2, '0');
+            timeDisplay.textContent = `${minutes}:${seconds}`;
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                clearInterval(intervalId);
+                startPauseBtn.textContent = 'เริ่มต่อ';
+                startPauseBtn.classList.replace('bg-yellow-500', 'bg-green-600');
+                startPauseBtn.classList.replace('hover:bg-yellow-600', 'hover:bg-green-700');
+                isRunning = false;
+            } else {
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                intervalId = setInterval(tick, 1000);
+                startPauseBtn.textContent = 'หยุดชั่วคราว';
+                startPauseBtn.classList.replace('bg-green-600', 'bg-yellow-500');
+                startPauseBtn.classList.replace('hover:bg-green-700', 'hover:bg-yellow-600');
+                isRunning = true;
+            }
+        }
+
+        function tick() {
+            if (timeRemaining > 0) {
+                timeRemaining--;
+                updateDisplay();
+                checkFlashConditions();
+            } else {
+                endTimer();
+            }
+        }
+        
+        function checkFlashConditions() {
+            stopFlashing();
+            if (timeRemaining <= 10 && timeRemaining > 0) {
+                appBody.classList.add('flashing-ry-2s');
+            } else if (timeRemaining <= 30 && timeRemaining > 10) {
+                appBody.classList.add('flashing-bo-4s');
+            } else if (timeRemaining <= 60 && timeRemaining > 30) {
+                appBody.classList.add('flashing-bw-4s');
+            }
+        }
+
+        function endTimer() {
+            clearInterval(intervalId);
+            isRunning = false;
+            isAlarming = true;
+            timeRemaining = 0;
+            updateDisplay();
+            
+            Tone.Transport.start();
+            startFlashing('flashing-ry-2s');
+
+            resetBtn.textContent = 'หยุด';
+            startPauseBtn.disabled = true;
+            increaseBtn.disabled = true;
+            decreaseBtn.disabled = true;
+            window.addEventListener('keydown', handleStopKey);
+        }
+
+        function resetTimer() {
+            if (isAlarming) {
+                Tone.Transport.stop();
+                window.removeEventListener('keydown', handleStopKey);
+                isAlarming = false;
+            }
+
+            clearInterval(intervalId);
+            stopFlashing();
+            isRunning = false;
+            timeRemaining = initialTime;
+            updateDisplay();
+
+            startPauseBtn.textContent = 'เริ่ม';
+            if (startPauseBtn.classList.contains('bg-yellow-500')) {
+                 startPauseBtn.classList.replace('bg-yellow-500', 'bg-green-600');
+                 startPauseBtn.classList.replace('hover:bg-yellow-600', 'hover:bg-green-700');
+            }
+            resetBtn.textContent = 'รีเซ็ต';
+            startPauseBtn.disabled = false;
+            increaseBtn.disabled = false;
+            decreaseBtn.disabled = false;
+        }
+
+        function handleStopKey(event) {
+            if (event.key === 'Enter') {
+                resetTimer();
+            }
+        }
+
+        function startFlashing(className) {
+            stopFlashing();
+            appBody.classList.add(className);
+        }
+
+        function stopFlashing() {
+            appBody.classList.remove('flashing-bw-4s', 'flashing-bo-4s', 'flashing-ry-2s');
+        }
+
+        function increaseTime() {
+            if (!isRunning) {
+                initialTime += 60;
+                timeRemaining = initialTime;
+                updateDisplay();
+            }
+        }
+
+        function decreaseTime() {
+            if (!isRunning && initialTime > 60) {
+                initialTime -= 60;
+                timeRemaining = initialTime;
+                updateDisplay();
+            }
+        }
+
+        // --- Event Listeners ---
+        startPauseBtn.addEventListener('click', toggleTimer);
+        resetBtn.addEventListener('click', resetTimer);
+        increaseBtn.addEventListener('click', increaseTime);
+        decreaseBtn.addEventListener('click', decreaseTime);
+
+        // --- Initial Display ---
+        updateDisplay();
+    </script>
+</body>
+</html>
+
