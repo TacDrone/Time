@@ -76,6 +76,10 @@
                 <button id="reset-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-lg transition-transform transform hover:scale-105">
                     รีเซ็ต
                 </button>
+                 <!-- ปุ่มทดลองเสียง -->
+                <button id="demo-sound-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-lg transition-transform transform hover:scale-105 disabled:opacity-50">
+                    ทดลองเสียง
+                </button>
             </div>
         </div>
     </div>
@@ -87,6 +91,7 @@
         const resetBtn = document.getElementById('reset-btn');
         const increaseBtn = document.getElementById('increase-btn');
         const decreaseBtn = document.getElementById('decrease-btn');
+        const demoSoundBtn = document.getElementById('demo-sound-btn');
         const appContainer = document.getElementById('app-container');
 
         let initialTime = 5 * 60; // 5 นาที
@@ -160,18 +165,17 @@
             
             startFlashing('flashing-ry-2s');
             
-            // เริ่มเสียงกริ่งยาวๆ
             alarmSound.triggerAttack("A4");
 
             resetBtn.textContent = 'หยุด';
             startPauseBtn.disabled = true;
             increaseBtn.disabled = true;
             decreaseBtn.disabled = true;
+            demoSoundBtn.disabled = true;
         }
 
         function resetTimer() {
             if (isAlarming) {
-                // หยุดเสียงกริ่ง
                 alarmSound.triggerRelease();
                 isAlarming = false;
             }
@@ -191,6 +195,7 @@
             startPauseBtn.disabled = false;
             increaseBtn.disabled = false;
             decreaseBtn.disabled = false;
+            demoSoundBtn.disabled = false;
         }
 
         function handleKeyPress(event) {
@@ -207,6 +212,13 @@
                 event.preventDefault();
                 resetTimer();
             }
+        }
+
+        function demoSound() {
+            if (typeof Tone !== 'undefined' && Tone.context.state !== 'running') {
+                Tone.start();
+            }
+            alarmSound.triggerAttackRelease("A4", "1s");
         }
 
         function startFlashing(className) {
@@ -239,6 +251,7 @@
         resetBtn.addEventListener('click', resetTimer);
         increaseBtn.addEventListener('click', increaseTime);
         decreaseBtn.addEventListener('click', decreaseTime);
+        demoSoundBtn.addEventListener('click', demoSound);
         window.addEventListener('keydown', handleKeyPress);
 
         // --- Initial Display ---
